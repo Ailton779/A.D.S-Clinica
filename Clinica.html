@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<title>Sistema Clínica – Monolítico</title>
+<style>
+  body{font-family:Arial,Helvetica,sans-serif;background:#f3f4f6;margin:0;padding:18px}
+  .wrap{max-width:1050px;margin:0 auto}
+  .card{background:#fff;padding:14px;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,.08);margin-bottom:14px}
+  h2,h3,h4{margin:6px 0}
+  input,select,textarea,button{font-family:inherit}
+  input,select,textarea{width:100%;padding:8px;margin:6px 0;border:1px solid #ccc;border-radius:6px}
+  textarea{min-height:80px}
+  button{padding:8px 12px;border:none;border-radius:6px;background:#0d6efd;color:white;cursor:pointer}
+  button.secondary{background:#6c757d}
+  table{width:100%;border-collapse:collapse;margin-top:6px}
+  th,td{padding:8px;border-bottom:1px solid #eee;text-align:left}
+  .row{display:flex;gap:12px}
+  .col{flex:1}
+  .hidden{display:none}
+  .muted{color:#666;font-size:13px}
+  .actions button{margin-right:6px}
+  .topbar{display:flex;justify-content:space-between;align-items:center}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- LOGIN -->
+<div id="login" class="card">
+  <h2>Login</h2>
+  <input id="loginUser" placeholder="Usuário" />
+  <input id="loginPass" type="password" placeholder="Senha" />
+  <button onclick="handleLogin()">Entrar</button>
+  <p id="loginMsg" class="muted" style="color:red"></p>
+  <p class="muted">Usuários padrão: admin/123 — dr1/123 — dr2/123 — dr3/123 — sec/123</p>
+</div>
+
+<!-- APP -->
+<div id="app" class="hidden">
+
+  <div class="card topbar">
+    <div>
+      <strong id="userWelcome"></strong>
+      <div id="userRole" class="muted"></div>
+    </div>
+    <button class="secondary" onclick="logout()">Sair</button>
+  </div>
+
+  <!-- ADMIN -->
+  <div id="adminArea" class="card hidden">
+    <h3>Admin – Gerenciar Usuários</h3>
+    <div class="row">
+      <div class="col">
+        <label>Tipo</label>
+        <select id="newTipo">
+          <option value="admin">Admin</option>
+          <option value="doutor">Doutor</option>
+          <option value="secretaria">Secretária</option>
+        </select>
+        <input id="newUser" placeholder="Usuário" />
+        <input id="newPass" placeholder="Senha" />
+        <button onclick="cadastrarUsuario()">Salvar usuário</button>
+        <p id="msgUser" class="muted"></p>
+      </div>
+      <div class="col">
+        <h4>Usuários cadastrados</h4>
+        <table id="tUsuarios"><thead><tr><th>Usuário</th><th>Tipo</th><th>Ações</th></tr></thead><tbody></tbody></table>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECRETARIA -->
+  <div id="secretariaArea" class="card hidden">
+    <h3>Secretária – Pacientes / Agenda / Financeiro</h3>
+    <div class="row">
+
+      <!-- Cadastro paciente + agendamento -->
+      <div class="col">
+        <h4>Cadastro de Paciente</h4>
+        <input id="pNome" placeholder="Nome" />
+        <input id="pCPF" placeholder="CPF" />
+        <input id="pTelefone" placeholder="Telefone" />
+        <input id="pNascimento" type="date" />
+        <input id="pEndereco" placeholder="Endereço" />
+        <input id="pAlergias" placeholder="Alergias" />
+        <textarea id="pHistorico" placeholder="Histórico clínico e observações"></textarea>
+        <button onclick="salvarPaciente()">Salvar</button>
+        <button class="secondary" onclick="limparFormPaciente()">Limpar</button>
+        <p id="msgPaciente" class="muted"></p>
+
+        <hr />
+
+        <h4>Agendar Consulta</h4>
+        <label>Paciente</label>
+        <select id="selPaciente"></select>
+
+        <label>Doutor</label>
+        <select id="selDoutor"></select>
+
+        <label>Data</label>
+        <input id="cData" type="date" />
+
+        <label>Hora</label>
+        <input id="cHora" type="time" />
+
+        <label>Valor (R$)</label>
+        <input id="cValor" type="number" />
+
+        <label>Observações</label>
+        <textarea id="cObs"></textarea>
+
+        <button onclick="salvarConsulta()">Agendar</button>
+        <button class="secondary" onclick="limparFormConsulta()">Limpar</button>
+        <p id="msgConsulta" class="muted"></p>
+      </div>
+
+      <!-- Listas e financeiro -->
+      <div class="col">
+        <h4>Lista de Pacientes</h4>
+        <table id="tPacientes"><thead><tr><th>Nome</th><th>CPF</th><th>Ações</th></tr></thead><tbody></tbody></table>
+
+        <h4 style="margin-top:12px">Consultas</h4>
+        <table id="tConsultas"><thead><tr><th>Paciente</th><th>Doutor</th><th>Data</th><th>Hora</th><th>Valor</th><th>Status</th><th>Ações</th></tr></thead><tbody></tbody></table>
+
+        <h4 style="margin-top:12px">Financeiro</h4>
+        <label>Consulta</label>
+        <select id="selConsultaPag"></select>
+        <input id="pagValor" placeholder="Valor pago" type="number" />
+        <select id="pagForma"><option value="avista">À vista</option><option value="parcela">Parcelado</option></select>
+        <button onclick="registrarPagamento()">Registrar pagamento</button>
+        <button class="secondary" onclick="limparPagamento()">Limpar</button>
+        <p id="msgPagamento" class="muted"></p>
+
+        <p class="muted">Receita: R$ <span id="totalReceita">0.00</span></p>
+        <p class="muted">Pendentes: R$ <span id="totalPendentes">0.00</span></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- DOUTOR -->
+  <div id="doutorArea" class="card hidden">
+    <h3>Doutor – Consultas e Prontuário</h3>
+    <div class="row">
+      <div class="col">
+        <h4>Minhas Consultas</h4>
+        <table id="tConsultasDoutor"><thead><tr><th>Paciente</th><th>Data</th><th>Hora</th><th>Status</th><th>Ações</th></tr></thead><tbody></tbody></table>
+      </div>
+      <div class="col">
+        <h4>Informações do Paciente</h4>
+<button onclick="mostrarInfoPaciente()">Mostrar informações</button>
+<div id="infoPaciente" class="muted" style="margin:12px 0"></div>
+
+<h4>Prontuário</h4>
+        <select id="selProntPaciente"></select>
+        <textarea id="prontEvolucao" placeholder="Adicionar evolução"></textarea>
+        <button onclick="adicionarEvolucao()">Salvar evolução</button>
+        <button class="secondary" onclick="limparEvolucao()">Limpar</button>
+        <p id="msgEvolucao" class="muted"></p>
+
+        <h4>Histórico</h4>
+        <div id="histArea" class="muted"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RELATÓRIOS -->
+  <div id="relatoriosArea" class="card hidden">
+    <h3>Relatórios</h3>
+    <p class="muted">Pacientes: <span id="rTotalPacientes">0</span></p>
+    <p class="muted">Consultas: <span id="rTotalConsultas">0</span></p>
+    <p class="muted">Receita: R$ <span id="rReceita">0.00</span></p>
+  </div>
+
+</div>
+</div>
+
+<script>
+// Chaves de armazenamento
+const K_USERS='s_users',K_PAC='s_pac',K_CONS='s_cons',K_EVO='s_evo',K_PAG='s_pag';
+
+// Usuários padrão + storage
+let users=JSON.parse(localStorage.getItem(K_USERS))||[
+  {usuario:'admin',senha:'123',tipo:'admin'},
+  {usuario:'dr1',senha:'123',tipo:'doutor'},
+  {usuario:'dr2',senha:'123',tipo:'doutor'},
+  {usuario:'dr3',senha:'123',tipo:'doutor'},
+  {usuario:'sec',senha:'123',tipo:'secretaria'}
+];
+let pacientes=JSON.parse(localStorage.getItem(K_PAC))||[];
+let consultas=JSON.parse(localStorage.getItem(K_CONS))||[];
+let evolucoes=JSON.parse(localStorage.getItem(K_EVO))||{};
+let pagamentos=JSON.parse(localStorage.getItem(K_PAG))||[];
+
+// ================= LOGIN =================
+function handleLogin(){
+  const u=loginUser.value.trim(), p=loginPass.value.trim();
+  const found=users.find(x=>x.usuario===u&&x.senha===p);
+  if(!found){loginMsg.textContent='Usuário ou senha incorretos';return;}
+  localStorage.setItem('s_logado',JSON.stringify(found));
+  openApp(found);
+}
+function logout(){localStorage.removeItem('s_logado');location.reload();}
+function openApp(user){login.classList.add('hidden');app.classList.remove('hidden');userWelcome.textContent=user.usuario;userRole.textContent=user.tipo;renderFor(user.tipo);}
+function renderFor(tipo){adminArea.classList.toggle('hidden',tipo!=='admin');secretariaArea.classList.toggle('hidden',tipo!=='secretaria');doutorArea.classList.toggle('hidden',tipo!=='doutor');relatoriosArea.classList.remove('hidden');refreshAll();}
+
+// ================= USUÁRIOS =================
+function saveUsers(){localStorage.setItem(K_USERS,JSON.stringify(users));}
+function cadastrarUsuario(){
+  const t=newTipo.value,u=newUser.value.trim(),p=newPass.value.trim();
+  if(!u||!p){msgUser.textContent='Preencha os campos';msgUser.style.color='red';return;}
+  if(users.find(x=>x.usuario===u)){msgUser.textContent='Usuário já existe';msgUser.style.color='red';return;}
+  users.push({usuario:u,senha:p,tipo:t});saveUsers();msgUser.textContent='Usuário salvo';msgUser.style.color='green';newUser.value='';newPass.value='';renderUsers();}
+function renderUsers(){const tb=tUsuarios.querySelector('tbody');tb.innerHTML='';users.forEach((u,i)=>{tb.innerHTML+=`<tr><td>${u.usuario}</td><td>${u.tipo}</td><td><button onclick="removerUsuario(${i})">Remover</button></td></tr>`});}
+function removerUsuario(i){if(confirm('Excluir?')){users.splice(i,1);saveUsers();renderUsers();}}
+
+// ================= PACIENTES =================
+function savePac(){localStorage.setItem(K_PAC,JSON.stringify(pacientes));}
+function salvarPaciente(){
+  const nome=pNome.value.trim(),cpf=pCPF.value.trim();
+  if(!nome||!cpf){msgPaciente.textContent='Nome e CPF são obrigatórios';msgPaciente.style.color='red';return;}
+  pacientes.push({id:Date.now(),nome,cpf,telefone:pTelefone.value,nasc:pNascimento.value,endereco:pEndereco.value,alergias:pAlergias.value,historico:pHistorico.value});
+  savePac();msgPaciente.textContent='Paciente salvo';msgPaciente.style.color='green';limparFormPaciente();renderPacientes();renderSelects();renderProntuarioSelect();refreshRelatorios();
+}
+function renderPacientes(){const tb=tPacientes.querySelector('tbody');tb.innerHTML='';pacientes.forEach(p=>{tb.innerHTML+=`<tr><td>${p.nome}</td><td>${p.cpf}</td><td><button onclick="editarPaciente(${p.id})">Editar</button><button onclick="removerPaciente(${p.id})">Remover</button></td></tr>`});}
+function editarPaciente(id){const p=pacientes.find(x=>x.id===id);pNome.value=p.nome;pCPF.value=p.cpf;pTelefone.value=p.telefone;pNascimento.value=p.nasc;pEndereco.value=p.endereco;pAlergias.value=p.alergias;pHistorico.value=p.historico;pacientes=pacientes.filter(x=>x.id!==id);savePac();renderPacientes();}
+function removerPaciente(id){if(confirm('Excluir?')){pacientes=pacientes.filter(x=>x.id!==id);savePac();renderPacientes();renderSelects();renderProntuarioSelect();}}
+function limparFormPaciente(){pNome.value='';pCPF.value='';pTelefone.value='';pNascimento.value='';pEndereco.value='';pAlergias.value='';pHistorico.value='';msgPaciente.textContent='';}
+
+// ================= CONSULTAS =================
+function saveCons(){localStorage.setItem(K_CONS,JSON.stringify(consultas));}
+function salvarConsulta(){
+  const pid=Number(selPaciente.value),doc=selDoutor.value,data=cData.value,hora=cHora.value,valor=parseFloat(cValor.value||0);
+  if(!pid||!doc||!data||!hora){msgConsulta.textContent='Preencha todos os campos';msgConsulta.style.color='red';return;}
+  consultas.push({id:Date.now(),pid,doutor:doc,data,hora,valor,obs:cObs.value,status:'agendada'});
+  saveCons();msgConsulta.textContent='Consulta agendada';msgConsulta.style.color='green';limparFormConsulta();renderConsultas();renderConsultasDoutor();renderSelects();refreshRelatorios();}
+function renderConsultas(){const tb=tConsultas.querySelector('tbody');tb.innerHTML='';consultas.forEach(c=>{const p=pacientes.find(x=>x.id===c.pid);tb.innerHTML+=`<tr><td>${p?p.nome:'-'}</td><td>${c.doutor}</td><td>${c.data}</td><td>${c.hora}</td><td>R$ ${c.valor.toFixed(2)}</td><td>${c.status}</td><td><button onclick="marcarRealizada(${c.id})">Realizada</button><button onclick="cancelarConsulta(${c.id})">Cancelar</button></td></tr>`});}
+function marcarRealizada(id){const c=consultas.find(x=>x.id===id);if(c){c.status='realizada';saveCons();renderConsultas();renderConsultasDoutor();refreshRelatorios();}}
+function cancelarConsulta(id){if(confirm('Cancelar?')){consultas=consultas.filter(x=>x.id!==id);saveCons();renderConsultas();renderConsultasDoutor();renderSelects();refreshRelatorios();}}
+function limparFormConsulta(){cData.value='';cHora.value='';cValor.value='';cObs.value='';msgConsulta.textContent='';}
+function renderConsultasDoutor(){const tb=tConsultasDoutor.querySelector('tbody');tb.innerHTML='';const log=JSON.parse(localStorage.getItem('s_logado'))||{};consultas.filter(c=>c.doutor===log.usuario).forEach(c=>{const p=pacientes.find(x=>x.id===c.pid);tb.innerHTML+=`<tr><td>${p?p.nome:'-'}</td><td>${c.data}</td><td>${c.hora}</td><td>${c.status}</td><td><button onclick="marcarRealizada(${c.id})">Realizada</button></td></tr>`});}
+
+// ================= PRONTUÁRIO =================
+function saveEvo(){localStorage.setItem(K_EVO,JSON.stringify(evolucoes));}
+function adicionarEvolucao(){const pid=Number(selProntPaciente.value),txt=prontEvolucao.value.trim();if(!pid||!txt){msgEvolucao.textContent='Selecione paciente e escreva algo';msgEvolucao.style.color='red';return;}const autor=(JSON.parse(localStorage.getItem('s_logado'))||{}).usuario;evolucoes[pid]=evolucoes[pid]||[];evolucoes[pid].push({id:Date.now(),texto:txt,data:new Date().toISOString(),autor});saveEvo();prontEvolucao.value='';msgEvolucao.textContent='Evolução salva';msgEvolucao.style.color='green';renderHistorico(pid);}
+function renderHistorico(pid){
+  renderPacienteInfo(pid);
+  const area = histArea;
+  const list = evolucoes[pid] || [];
+  area.innerHTML = list.map(e=>`<div style='border-bottom:1px solid #eee;padding:6px'><strong>${e.autor}</strong> <span class='muted'>(${new Date(e.data).toLocaleString()})</span><div>${e.texto}</div></div>`).join('');
+}
+
+function mostrarInfoPaciente(){
+  const pid = Number(selProntPaciente.value);
+  renderPacienteInfo(pid);
+}
+
+function renderPacienteInfo(pid){
+  const p = pacientes.find(x=>x.id===pid);
+  if(!p){ infoPaciente.innerHTML=''; return; }
+  infoPaciente.innerHTML = `<div><strong>Nome:</strong> ${p.nome}</div><div><strong>CPF:</strong> ${p.cpf}</div><div><strong>Telefone:</strong> ${p.telefone}</div><div><strong>Endereço:</strong> ${p.endereco}</div><div><strong>Nascimento:</strong> ${p.nasc}</div><div><strong>Alergias:</strong> ${p.alergias}</div><div><strong>Histórico:</strong> ${p.historico}</div>`;
+}
+function limparEvolucao(){prontEvolucao.value='';msgEvolucao.textContent='';}
+
+// ================= FINANCEIRO =================
+function savePag(){localStorage.setItem(K_PAG,JSON.stringify(pagamentos));}
+function registrarPagamento(){const id=Number(selConsultaPag.value),valor=parseFloat(pagValor.value);if(!id||valor<=0){msgPagamento.textContent='Selecione consulta e valor válido';msgPagamento.style.color='red';return;}pagamentos.push({id:Date.now(),consultaId:id,valor,forma:pagForma.value,data:new Date().toISOString()});savePag();const c=consultas.find(x=>x.id===id);if(c)c.status='paga';saveCons();msgPagamento.textContent='Pagamento registrado';msgPagamento.style.color='green';renderConsultas();renderSelects();refreshRelatorios();}
+function limparPagamento(){pagValor.value='';msgPagamento.textContent='';}
+
+// ================= SELECTS / RELATÓRIOS =================
+function renderSelects(){selPaciente.innerHTML='';selDoutor.innerHTML='';selConsultaPag.innerHTML='';pacientes.forEach(p=>selPaciente.innerHTML+=`<option value='${p.id}'>${p.nome}</option>`);users.filter(u=>u.tipo==='doutor').forEach(d=>selDoutor.innerHTML+=`<option value='${d.usuario}'>${d.usuario}</option>`);consultas.forEach(c=>{const p=pacientes.find(x=>x.id===c.pid);selConsultaPag.innerHTML+=`<option value='${c.id}'>${p?p.nome:'-'} - ${c.data}</option>`});}
+function renderProntuarioSelect(){selProntPaciente.innerHTML='';pacientes.forEach(p=>selProntPaciente.innerHTML+=`<option value='${p.id}'>${p.nome}</option>`);selProntPaciente.onchange=()=>renderHistorico(Number(selProntPaciente.value));}
+function refreshRelatorios(){rTotalPacientes.textContent=pacientes.length;rTotalConsultas.textContent=consultas.length;const rec=pagamentos.reduce((s,x)=>s+x.valor,0);rReceita.textContent=rec.toFixed(2);totalReceita.textContent=rec.toFixed(2);const pend=consultas.filter(c=>c.status!=='paga').reduce((s,c)=>s+c.valor,0);totalPendentes.textContent=pend.toFixed(2);}
+
+function refreshAll(){renderUsers();renderPacientes();renderConsultas();renderConsultasDoutor();renderSelects();renderProntuarioSelect();refreshRelatorios();}
+
+// Auto login check
+(function(){const log=JSON.parse(localStorage.getItem('s_logado'));if(log)openApp(log);else refreshAll();})();
+
+</script>
+</body>
+</html>
